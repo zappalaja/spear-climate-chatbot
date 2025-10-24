@@ -1,0 +1,137 @@
+SPEAR Climate Model Quick Reference
+====================================
+
+SPEAR (Seamless system for Prediction and EArth system Research)
+Developed by NOAA's Geophysical Fluid Dynamics Laboratory (GFDL)
+
+Model Configurations
+--------------------
+
+SPEAR_MED (Medium Resolution):
+- Atmospheric resolution: ~100 km (C96 cubed-sphere grid)
+- Ocean resolution: ~1° (0.25° in tropics)
+- Vertical levels: 33 atmosphere, 75 ocean
+- Primary use: Climate projections and seasonal-to-decadal prediction
+- Maximum ensemble size: 30 members
+
+SPEAR_LO (Low Resolution):
+- Atmospheric resolution: ~200 km (C48)
+- Optimized for large ensembles (100+ members)
+- Faster computation for uncertainty quantification
+
+SPEAR_HI (High Resolution):
+- Atmospheric resolution: ~50 km (C192)
+- Better for tropical cyclones and regional features
+- More computationally expensive
+
+Key Variables
+-------------
+
+Temperature Variables:
+- tas: Near-surface (2m) air temperature in Kelvin
+- tasmax: Daily maximum temperature
+- tasmin: Daily minimum temperature
+- tos: Sea surface temperature
+
+Precipitation:
+- pr: Total precipitation rate (kg m-2 s-1)
+- prsn: Snowfall rate
+- Convert pr to mm/day: multiply by 86400
+
+Wind:
+- uas: Eastward wind component at 10m
+- vas: Northward wind component at 10m
+- sfcWind: Wind speed magnitude
+
+Available Scenarios
+-------------------
+
+historical (1850-2014):
+- Observed forcings: GHGs, aerosols, solar, volcanoes
+- Use for model validation and baseline
+
+scenarioSSP5-8.5 (2015-2100):
+- High emissions pathway
+- ~8.5 W/m² radiative forcing by 2100
+- ~4-5°C global warming by 2100
+- Represents continued fossil fuel reliance
+
+Ensemble Member Naming
+----------------------
+
+Format: rXiYpZfW
+- r = realization (different initial conditions)
+- i = initialization method
+- p = physics parameterization
+- f = forcing dataset
+
+Example: r15i1p1f1
+- 15th ensemble member
+- Standard initialization, physics, and forcing
+
+Data Access
+-----------
+
+Storage: AWS S3 (NOAA Open Data Program)
+Format: NetCDF4 with CF conventions
+Grids: gr3 (regridded), gn (native)
+
+Frequencies:
+- Amon: Monthly atmospheric
+- day: Daily means
+- Omon: Monthly ocean
+- 6hrLev: 6-hourly pressure levels
+
+Best Practices
+--------------
+
+1. Use ensemble means to reduce natural variability noise
+2. Temperature projections more certain than precipitation
+3. Global/hemispheric patterns more certain than regional
+4. Always check metadata (coordinates, time, scenario, ensemble)
+5. SPEAR is one model - compare with CMIP6 multi-model for robustness
+
+Model Limitations
+-----------------
+
+- ~100 km resolution limits small-scale features
+- Clouds and convection are parameterized
+- Regional biases exist (especially precipitation)
+- Single model perspective (not multi-model consensus)
+- Ocean eddies parameterized (not explicit in SPEAR_MED)
+
+Quality Notes
+-------------
+
+Strengths:
+- Large ensembles for uncertainty quantification
+- Well-validated against observations
+- Active development at GFDL
+- Seamless prediction across timescales
+
+Use with caution for:
+- Local/city-scale projections
+- Extreme event frequency (needs large ensemble)
+- Precipitation patterns (higher uncertainty)
+- Tipping points and abrupt changes
+
+Citations
+---------
+
+When using SPEAR data, cite:
+- Data source: NOAA-GFDL SPEAR project
+- Model: Seamless system for Prediction and EArth system Research
+- Dataset location: AWS Open Data (s3://noaa-gfdl-spear-*)
+
+For peer-reviewed publications, consult GFDL's SPEAR publication list
+for appropriate model description papers.
+
+Contact
+-------
+
+For technical questions about SPEAR:
+- GFDL website: www.gfdl.noaa.gov
+- SPEAR data portal documentation
+- GFDL model development team
+
+Last Updated: January 2025
