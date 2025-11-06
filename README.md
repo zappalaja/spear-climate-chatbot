@@ -134,7 +134,7 @@ pip install -r requirements.txt
 
 Check your `.env` file has the correct API key:
 ```bash
-ANTHROPIC_API_KEY=...
+ANTHROPIC_API_KEY=your_api_key_here
 ```
 
 ### "Query too large" errors
