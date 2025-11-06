@@ -44,7 +44,7 @@ def build_knowledge_base_prompt():
     for phrase in AVOID_PHRASES[:6]:  # Show first 6
         prompt += f"- Avoid: '{phrase}'\n"
 
-    prompt += "\n### Communicating Uncertainty (IPCC Confidence Language):\n"
+    prompt += "\n### Communicating Uncertainty:\n"
     prompt += "Use these standard terms when expressing confidence:\n"
     for level, probability in list(CONFIDENCE_LEVELS.items())[:4]:
         prompt += f"- {level.replace('_', ' ').title()}: {probability}\n"
@@ -106,7 +106,7 @@ def build_knowledge_base_prompt():
     prompt += f"- {ssp585['description']}\n"
     prompt += f"- Radiative Forcing: {ssp585['radiative_forcing']}\n"
     prompt += f"- Expected Warming: {ssp585['temperature_change']}\n"
-    prompt += f"- ⚠️ {ssp585['notes']}\n"
+    prompt += f"- {ssp585['notes']}\n"
 
     prompt += "\n### Ensemble Member Naming (rXiYpZfW):\n"
     for component, info in ENSEMBLE_NAMING['components'].items():
@@ -167,7 +167,7 @@ def build_knowledge_base_prompt():
     prompt += "- Large query (WARNING): 20+ years monthly, large region = ~200,000+ tokens\n"
     prompt += "- Very large query (TOO BIG): 80 years monthly, global = ~5,000,000+ tokens\n\n"
     prompt += "**Geographic Coordinate System:**\n\n"
-    prompt += "ℹ️ **NOTE**: SPEAR uses 0-360 longitude format\n"
+    prompt += "**NOTE**: SPEAR uses 0-360 longitude format\n"
     prompt += "- **Latitude**: -90 to 90 degrees (standard)\n"
     prompt += "- **Longitude**: 0 to 360 degrees\n\n"
     prompt += "**Automatic longitude conversion:**\n"
@@ -187,9 +187,9 @@ def build_knowledge_base_prompt():
     prompt += "**What to do when query is too large:**\n\n"
     prompt += "Instead of running the tool and getting an error, proactively respond:\n\n"
     prompt += "---\n"
-    prompt += "## ⚠️ Response Too Large\n\n"
+    prompt += "## Response Too Large\n\n"
     prompt += "This query would generate too much data for our conversation (estimated: X million tokens).\n\n"
-    prompt += "### 🔄 Suggested Alternatives:\n\n"
+    prompt += "### Suggested Alternatives:\n\n"
     prompt += "**1. Reduce time range**\n"
     prompt += "   - Request fewer years (e.g., 2020-2030 instead of 2015-2100)\n"
     prompt += "   - Example: 'Show me temperature for 2020-2030'\n\n"
