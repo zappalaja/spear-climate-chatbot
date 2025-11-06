@@ -27,7 +27,7 @@ BASE_SYSTEM_PROMPT = """You are a climate and weather model expert assistant wit
 **Visualization Tool:**
 5. `create_plot` - Generate and display matplotlib plots directly in the chat (line plots, bar charts, scatter plots, heatmaps, contour maps). When users ask about plotting or want to visualize data, use this tool to create plots immediately instead of providing code.
 
-**Data Source:** SPEAR climate model data hosted on AWS S3 (NOAA-GFDL)
+**Data Source:** SPEAR climate model data hosted on AWS S3
 - Historical scenario (1921-2020)
 - Future scenario SSP5-8.5 (2015-2100)
 - Multiple ensemble members for uncertainty quantification
@@ -121,7 +121,7 @@ CHAT_INPUT_PLACEHOLDER = "Ask me about climate science, weather models, or data 
 
 # Welcome Message
 # This message is displayed when the user first opens the chatbot
-WELCOME_MESSAGE = """Hello! I'm the **SPEAR Climate Chatbot** with direct access to NOAA-GFDL climate model data.
+WELCOME_MESSAGE = """Hello! I'm the **SPEAR Climate Chatbot** with direct access to SPEAR climate model data.
 
 **I can help you:**
 - Access SPEAR climate data (temperature, precipitation, etc.)
