@@ -1,5 +1,5 @@
 """
-Controlled Vocabulary Configuration
+Chat Regulation Configuration
 ====================================
 This file defines language policies, response guidelines, and behavioral rules
 for the chatbot. Modify these settings to control what the chatbot can and cannot say.
