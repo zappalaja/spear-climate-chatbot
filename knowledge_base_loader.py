@@ -5,7 +5,7 @@ This module loads configuration files and formats them into sections for the AI 
 Centralizes all knowledge base content for easy maintenance and updates.
 """
 
-from controlled_vocabulary import *
+from chat_regulation import *
 from variable_definitions import *
 from spear_model_info import *
 from confidence_assessment import CONFIDENCE_ASSESSMENT_INSTRUCTIONS
