@@ -172,7 +172,7 @@ def is_query_too_large(
 
     # Generate message
     if is_too_large:
-        message = f"⚠️ This query would generate approximately {estimated_tokens:,} tokens"
+        message = f"This query would generate approximately {estimated_tokens:,} tokens"
         message += f" (total: {total_tokens:,} tokens), which exceeds the safe limit of {SAFE_TOKEN_THRESHOLD:,} tokens."
     else:
         message = f"✓ Query size is acceptable: ~{estimated_tokens:,} tokens"
@@ -298,13 +298,13 @@ def format_size_warning(
     Returns:
         Formatted markdown message
     """
-    message = f"""## ⚠️ Response Too Large
+    message = f"""## Response Too Large
 
 This query would generate approximately **{estimated_tokens:,} tokens**, which exceeds the safe limit for our conversation.
 
 {suggestions['problem']}
 
-### 🔄 Suggested Alternatives:
+### Suggested Alternatives:
 
 """
 
@@ -319,7 +319,7 @@ This query would generate approximately **{estimated_tokens:,} tokens**, which e
             message += f"\n```python{alt['code_example']}```\n"
         message += "\n"
 
-    message += "### 💡 Tips:\n"
+    message += "### Tips:\n"
     message += "- Start with smaller regions and time periods\n"
     message += "- Use spatial/temporal averages when possible\n"
     message += "- For very large analyses, use Python scripts to access data directly\n"
