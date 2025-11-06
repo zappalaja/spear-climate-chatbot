@@ -36,7 +36,6 @@ ENV MCP_SERVER_PORT=8000
 # When running the container, pass it using one of these methods:
 #   1. Using environment variable: -e ANTHROPIC_API_KEY=your-key-here
 #   2. Using env file: --env-file .env
-#   3. Using docker-compose (recommended - see docker-compose.yml)
 
 # Expose Streamlit port
 EXPOSE 8501
