@@ -132,7 +132,6 @@ The **overall confidence** is calculated as a weighted average of the four categ
 ✅ Data directly from SPEAR MCP tools (query_netcdf_data, etc.)
 ✅ Complete metadata present (coordinates, time, scenario, ensemble)
 ✅ Variable defined in knowledge base files
-✅ Scientific explanation matches IPCC consensus
 ✅ Model information from official knowledge base
 ✅ Data values within expected ranges
 ✅ Historical data (more certain than future projections)
@@ -181,7 +180,6 @@ After a response about temperature data from SPEAR:
 **Key Factors:**
 - ✅ All data from verified SPEAR MCP tools
 - ✅ Complete spatial and temporal metadata provided
-- ✅ Scientific explanations match IPCC consensus
 ---
 
 ## Customization
@@ -219,7 +217,6 @@ CONFIDENCE_CATEGORIES = {
         "high_indicators": [
             "Explanation based on well-established physics",
             "Supported by knowledge base definitions",
-            "Follows IPCC consensus",
             "Clear physical mechanisms"
         ],
         "low_indicators": [
@@ -335,7 +332,7 @@ After every response, you MUST provide a confidence assessment in the following 
 - 0-39%: No tool verification, general knowledge only or tool errors
 
 **Scientific Explanation (0-100%):**
-- 95-100%: Well-established physics, matches knowledge base, IPCC consensus
+- 95-100%: Well-established physics, matches knowledge base
 - 80-94%: Strong scientific basis, minor simplifications
 - 60-79%: Generally accepted, some assumptions or simplifications
 - 40-59%: Basic principles, significant uncertainties
@@ -387,7 +384,6 @@ Calculate overall confidence as weighted average:
 
 **Key Factors:**
 - ✅ All data from verified SPEAR MCP tools
-- ✅ Scientific explanations match IPCC consensus
 - ✅ Complete metadata provided (coordinates, time, scenario, ensemble)
 ---
 ```
@@ -492,7 +488,6 @@ CONFIDENCE_FACTORS = {
         "✅ Data retrieved directly from SPEAR MCP tools",
         "✅ All metadata present (coordinates, time, scenario, ensemble)",
         "✅ Variable defined in knowledge base",
-        "✅ Scientific explanation matches IPCC consensus",
         "✅ Model information from official knowledge base",
         "✅ Data values within expected ranges",
         "✅ Multiple ensemble members confirm pattern",
