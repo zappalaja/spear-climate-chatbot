@@ -277,16 +277,16 @@ if __name__ == "__main__":
     documents = scan_reference_documents()
 
     if documents:
-        print(f"\n✅ Found {len(documents)} document(s):\n")
+        print(f"\n Found {len(documents)} document(s):\n")
         for filename, text in documents.items():
-            print(f"  📄 {filename}")
+            print(f" {filename}")
             print(f"     - Length: {len(text):,} characters")
             print(f"     - Preview: {text[:100].replace(chr(10), ' ')}...")
             print()
     else:
-        print("\n⚠️  No documents found")
+        print("\n No documents found")
         print(f"\nPlace PDF, TXT, or MD files in the '{REFERENCE_DOCS_PATH}' folder")
         print("Then run this script again to test document loading")
 
     print("\n" + "=" * 60)
-    print("✓ Document processor ready")
+    print("Document processor ready")
