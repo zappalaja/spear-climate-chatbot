@@ -1,0 +1,52 @@
+# Containerfile for SPEAR Climate Chatbot (Streamlit App Only)
+# Designed to run in a pod with the SPEAR MCP server container
+
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better layer caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY *.py ./
+COPY reference_documents/ ./reference_documents/
+
+# Create logs directory
+RUN mkdir -p chat_logs
+
+# Set environment variables for pod communication
+# NOTE: MCP_SERVER_URL should be set via .env file at runtime:
+#   - For pod deployment: http://localhost:8000 (containers share network namespace)
+#   - For docker-compose: http://spear-mcp-server:8000 (separate networks)
+ENV MCP_SERVER_HOST=spear-mcp-server
+ENV MCP_SERVER_PORT=8000
+
+# NOTE: The ANTHROPIC_API_KEY must be provided at runtime
+# When running the container, pass it using one of these methods:
+#   1. Using environment variable: -e ANTHROPIC_API_KEY=your-key-here
+#   2. Using env file: --env-file .env
+#   3. Using docker-compose (recommended - see docker-compose.yml)
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Install curl for health check
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Run Streamlit app
+CMD ["streamlit", "run", "chatbot_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
