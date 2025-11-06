@@ -43,7 +43,6 @@ of its explanations about climate processes, phenomena, and interpretations.
 **High confidence (95-100%) when:**
 - Explanation based on well-established, fundamental physics (e.g., thermodynamics)
 - Supported by definitions in the knowledge base (variable_definitions.py, spear_model_info.py)
-- Aligns with IPCC consensus science
 - Clear physical mechanisms with strong evidence base
 - Topic is core climate science (temperature, greenhouse effect, etc.)
 
