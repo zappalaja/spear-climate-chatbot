@@ -66,8 +66,6 @@ The chatbot's behavior can be customized by editing:
 - **`confidence_assessment.py`**: Confidence assessment criteria
 - **`ai_config.py`**: Model settings, temperature, welcome message
 
-See [CONFIGURATION_GUIDE.md](CONFIGURATION_GUIDE.md) for details.
-
 ## Podman Deployment
 
 ### Build the image
