@@ -4,13 +4,13 @@ An AI-powered chatbot for exploring SPEAR (Seamless system for Prediction and EA
 
 ## Features
 
-- 🌡️ **Direct SPEAR Data Access**: Query climate data from AWS S3 (historical and SSP5-8.5 scenarios)
-- 📊 **Automatic Visualization**: Generate publication-quality plots with metadata
-- 🤖 **Claude AI Integration**: Powered by Anthropic's Claude Sonnet 4.5
-- 🔍 **Smart Size Management**: Automatic query validation and size checking
-- 🌍 **Geographic Conversion**: Auto-converts longitude formats (-180/180 ↔ 0-360)
-- 📚 **Expert Knowledge Base**: Built-in climate science terminology and SPEAR model info
-- ⚡ **Confidence Assessment**: Self-assessment of response accuracy
+- **Direct SPEAR Data Access**: Query climate data from AWS S3 (historical and SSP5-8.5 scenarios)
+- **Automatic Visualization**: Generate plots with metadata
+- **Claude AI Integration**: Powered by Anthropic's Claude Sonnet 4.5
+- **Smart Size Management**: Automatic query validation and size checking
+- **Geographic Conversion**: Auto-converts longitude formats (-180/180 ↔ 0-360)
+- **Expert Knowledge Base**: Built-in climate science terminology and SPEAR model info
+- **Confidence Assessment**: Self-assessment of response accuracy
 
 ## Quick Start
 
