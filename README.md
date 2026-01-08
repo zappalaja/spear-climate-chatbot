@@ -5,14 +5,20 @@ An AI-powered chatbot for exploring SPEAR (Seamless system for Prediction and EA
 ## Features
 
 - **Direct SPEAR Data Access**: Query climate data from AWS S3 (historical and SSP5-8.5 scenarios)
-- **Automatic Visualization**: Generate plots with metadata
+- **Visualization**: Generate plots
 - **Claude AI Integration**: Powered by Anthropic's Claude Sonnet 4.5
 - **Smart Size Management**: Automatic query validation and size checking
 - **Geographic Conversion**: Auto-converts longitude formats (-180/180 ↔ 0-360)
 - **Expert Knowledge Base**: Built-in climate science terminology and SPEAR model info
-- **Confidence Assessment**: Self-assessment of response accuracy
+- **Confidence Assessment**: Qualitative self-assessment of response accuracy
 
-## Quick Start
+# # Reccomended Setup Using Podman Pod
+
+
+Containers to be publicly available in the future! Currently only for private use.
+
+
+## Quick Start Outside of Containers
 
 Python Virtual Environment
 
@@ -63,8 +69,8 @@ The chatbot's behavior can be customized by editing:
 - **`controlled_vocabulary.py`**: Language policies, prohibited topics, terminology
 - **`variable_definitions.py`**: Climate variable definitions and units
 - **`spear_model_info.py`**: SPEAR model specifications and scenarios
-- **`confidence_assessment.py`**: Confidence assessment criteria
-- **`ai_config.py`**: Model settings, temperature, welcome message
+- **`confidence_assessment.py`**: Qualitative confidence assessment criteria
+- **`ai_config.py`**: Model settings, conversation tone, welcome message
 
 ## Podman Deployment
 
@@ -76,13 +82,6 @@ podman build -t spear-chatbot .
 
 ## Usage Examples
 
-### Query Climate Data
-
-```
-"Show me temperature data for the Northeast US from 2020-2030"
-"What is the precipitation trend in Europe for SSP5-8.5?"
-"Plot sea surface temperature for the Pacific Ocean"
-```
 
 ### Browse Available Data
 
@@ -148,3 +147,4 @@ Ensure port 8501 is available:
 ```bash
 lsof -i :8501
 ```
+
