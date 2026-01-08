@@ -2,6 +2,10 @@
 
 An AI-powered chatbot for exploring SPEAR (Seamless system for Prediction and EArth system Research) climate model data.
 
+This chatbot is designed to be run alongside the SPEAR MCP server for AWS hosted output:
+
+https://github.com/zappalaja/spear-mcp-test
+
 ## Features
 
 - **Direct SPEAR Data Access**: Query climate data from AWS S3 (historical and SSP5-8.5 scenarios)
@@ -12,7 +16,7 @@ An AI-powered chatbot for exploring SPEAR (Seamless system for Prediction and EA
 - **Expert Knowledge Base**: Built-in climate science terminology and SPEAR model info
 - **Confidence Assessment**: Qualitative self-assessment of response accuracy
 
-# # Reccomended Setup Using Podman Pod
+## Reccomended Setup Using Podman Pod
 
 
 Containers to be publicly available in the future! Currently only for private use.
