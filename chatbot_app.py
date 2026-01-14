@@ -167,35 +167,24 @@ def plot_data_preview(data_dict: dict):
     except Exception as e:
         st.info(f"❌ Error plotting data: {e}")
 
-
 def retrieve_rag_context(query: str, k: int = 5) -> str:
-    """
-    Retrieve relevant context from the RAG FastAPI service.
-    Returns a formatted context block or empty string on failure.
-
-    Env vars:
-      - RAG_API_URL: base URL of the retrieval service (default: http://localhost:8002)
-    """
     rag_url = os.getenv("RAG_API_URL", "http://localhost:8002").rstrip("/")
-
     try:
-        resp = requests.get(
+        r = requests.post(
             f"{rag_url}/query",
-            params={"q": query, "k": k},
-            timeout=20,
+            json={"query": query, "k": k},
+            timeout=15,
         )
-        resp.raise_for_status()
-        data = resp.json()
-
-        parts = []
-        for item in data.get("results", []):
-            source = item.get("source", "unknown")
-            text = item.get("text", "")
-            if text:
-                parts.append(f"SOURCE: {source}\n{text}")
-
-        if not parts:
+        r.raise_for_status()
+        data = r.json()
+        results = data.get("results", [])
+        if not results:
             return ""
+        # format however you like:
+        return "\n\n".join([x["content"] for x in results])
+    except Exception as e:
+        print(f"RAG retrieval failed: {e}")
+        return ""
 
         # Keep it bounded so you don't explode token usage
         # (Optional tweak: cap total chars)
