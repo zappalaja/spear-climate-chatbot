@@ -20,5 +20,8 @@ if [ ! -f .env ]; then
     exit 1
 fi 
 
+# RAG URL
+RAG_API_URL=http://localhost:8002
+
 # run the app
 streamlit run chatbot_app.py
