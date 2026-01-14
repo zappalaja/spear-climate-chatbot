@@ -180,7 +180,7 @@ def retrieve_rag_context(query: str, k: int = 5) -> str:
 
     try:
         resp = requests.get(
-            f"{rag_url}/retrieve",
+            f"{rag_url}/query",
             params={"q": query, "k": k},
             timeout=20,
         )
