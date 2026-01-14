@@ -186,25 +186,6 @@ def retrieve_rag_context(query: str, k: int = 5) -> str:
         print(f"RAG retrieval failed: {e}")
         return ""
 
-        # Keep it bounded so you don't explode token usage
-        # (Optional tweak: cap total chars)
-        context = "\n\n---\n\n".join(parts)
-        max_chars = int(os.getenv("RAG_CONTEXT_MAX_CHARS", "8000"))
-        if len(context) > max_chars:
-            context = context[:max_chars] + "\n\n[...context truncated...]"
-
-        return (
-            "### Retrieved Context (use when relevant)\n"
-            "Use the following excerpts as grounding. Cite SOURCE filenames when using facts.\n\n"
-            + context
-        )
-
-    except Exception as e:
-        # Fail silently; chatbot should still work without RAG
-        print(f"RAG retrieval failed: {e}")
-        return ""
-
-
 # ============================================================================
 # CHAT INTERFACE
 # ============================================================================
