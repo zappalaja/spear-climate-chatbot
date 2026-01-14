@@ -15,6 +15,7 @@ import streamlit as st
 import os
 import json
 import sys
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 from anthropic import Anthropic
@@ -167,6 +168,54 @@ def plot_data_preview(data_dict: dict):
         st.info(f"❌ Error plotting data: {e}")
 
 
+def retrieve_rag_context(query: str, k: int = 5) -> str:
+    """
+    Retrieve relevant context from the RAG FastAPI service.
+    Returns a formatted context block or empty string on failure.
+
+    Env vars:
+      - RAG_API_URL: base URL of the retrieval service (default: http://localhost:8002)
+    """
+    rag_url = os.getenv("RAG_API_URL", "http://localhost:8002").rstrip("/")
+
+    try:
+        resp = requests.get(
+            f"{rag_url}/retrieve",
+            params={"q": query, "k": k},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        parts = []
+        for item in data.get("results", []):
+            source = item.get("source", "unknown")
+            text = item.get("text", "")
+            if text:
+                parts.append(f"SOURCE: {source}\n{text}")
+
+        if not parts:
+            return ""
+
+        # Keep it bounded so you don't explode token usage
+        # (Optional tweak: cap total chars)
+        context = "\n\n---\n\n".join(parts)
+        max_chars = int(os.getenv("RAG_CONTEXT_MAX_CHARS", "8000"))
+        if len(context) > max_chars:
+            context = context[:max_chars] + "\n\n[...context truncated...]"
+
+        return (
+            "### Retrieved Context (use when relevant)\n"
+            "Use the following excerpts as grounding. Cite SOURCE filenames when using facts.\n\n"
+            + context
+        )
+
+    except Exception as e:
+        # Fail silently; chatbot should still work without RAG
+        print(f"RAG retrieval failed: {e}")
+        return ""
+
+
 # ============================================================================
 # CHAT INTERFACE
 # ============================================================================
@@ -178,6 +227,10 @@ if len(st.session_state.messages) == 0:
 
 # Display chat history
 for message in st.session_state.messages:
+    # Do not display internal system messages (e.g., injected RAG context)
+    if message.get("role") == "system":
+        continue
+
     with st.chat_message(message["role"]):
         # Handle both string content and list content (from Claude API)
         content = message["content"]
@@ -198,6 +251,14 @@ if prompt := st.chat_input(CHAT_INPUT_PLACEHOLDER):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+
+    # ------------------------------------------------------------------------
+    # RAG RETRIEVAL (FastAPI / Chroma) - injected as a SYSTEM message
+    # (not displayed in the UI; see history loop above)
+    # ------------------------------------------------------------------------
+    rag_context = retrieve_rag_context(prompt, k=int(os.getenv("RAG_TOP_K", "5")))
+    if rag_context:
+        st.session_state.messages.append({"role": "system", "content": rag_context})
 
     # Generate assistant response
     with st.chat_message("assistant"):
@@ -356,7 +417,7 @@ if prompt := st.chat_input(CHAT_INPUT_PLACEHOLDER):
                                         content_str = json.dumps(result, default=str)
                                     except (TypeError, ValueError, json.JSONDecodeError) as e:
                                         content_str = f"Tool result serialization error: {str(e)}\nRaw result: {str(result)}"
-                                    
+
                                     tool_results.append({
                                         "type": "tool_result",
                                         "tool_use_id": content_block.id,
@@ -434,4 +495,3 @@ if prompt := st.chat_input(CHAT_INPUT_PLACEHOLDER):
             msg_placeholder.markdown(error_msg)
             st.session_state.messages.append({"role": "assistant", "content": error_msg})
             save_chat_history()  # Save even on error
-
