@@ -48,9 +48,8 @@ Python Virtual Environment
 
 4. **Run the application**
    
-   Edit, make executable, and run **`run_local.sh`**:
+   Make executable and run **`run_local.sh`**:
    ```bash
-   vi run_local.sh # make changes
    chmod +x run_local.sh
    ./run_local.sh
    ```
