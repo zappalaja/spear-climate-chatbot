@@ -47,11 +47,18 @@ Python Virtual Environment
    ```
 
 4. **Run the application**
+   Edit, make executable, and run run_local.sh:
+   ```bash
+   vi run_local.sh # make changes
+   chmod +x run_local.sh
+   ./run_local.sh
+   ```
+   Or:
    ```bash
    streamlit run chatbot_app.py
    ```
 
-5. **Access the chatbot**
+6. **Access the chatbot**
    Open your browser to: http://localhost:8501
 
 ## Configuration
