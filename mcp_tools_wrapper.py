@@ -10,24 +10,68 @@ from response_size_estimator import is_query_too_large, suggest_alternatives, fo
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
 
+# ============================================================================
+# DATA CACHE - Store query results to avoid re-querying
+# ============================================================================
+# Cache is stored per-session in st.session_state so that different users
+# never share each other's results. Falls back to a plain dict when called
+# outside a Streamlit context (e.g. tests or stdio transport mode).
+
+def _get_cache() -> dict:
+    try:
+        import streamlit as st
+        if "query_data_cache" not in st.session_state:
+            st.session_state.query_data_cache = {}
+        return st.session_state.query_data_cache
+    except Exception:
+        return {}
+
+def get_cache_key(tool_name: str, tool_input: dict) -> str:
+    """Generate a cache key from tool name and input parameters."""
+    sorted_input = json.dumps(tool_input, sort_keys=True, default=str)
+    return f"{tool_name}:{sorted_input}"
+
+def get_cached_result(tool_name: str, tool_input: dict):
+    """Check if we have a cached result for this query."""
+    cache = _get_cache()
+    cache_key = get_cache_key(tool_name, tool_input)
+    if cache_key in cache:
+        print(f"[CACHE HIT] Returning cached result for {tool_name}")
+        return cache[cache_key]
+    return None
+
+def cache_result(tool_name: str, tool_input: dict, result: dict):
+    """Store a result in the cache."""
+    cache = _get_cache()
+    cache_key = get_cache_key(tool_name, tool_input)
+    cache[cache_key] = result
+    print(f"[CACHE STORE] Cached result for {tool_name} (cache size: {len(cache)})")
+
+def get_last_query_data() -> dict:
+    """Get the most recent query_netcdf_data result for plotting."""
+    cache = _get_cache()
+    for key in reversed(list(cache.keys())):
+        if key.startswith("query_netcdf_data:"):
+            return cache[key]
+    return None
+
 # Check if we should use HTTP or stdio transport
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
 USE_HTTP_TRANSPORT = MCP_SERVER_URL is not None
 
 if USE_HTTP_TRANSPORT:
     print(f"[MCP CONFIG] Using HTTP SSE transport to: {MCP_SERVER_URL}")
-    try:
-        from mcp.client.sse import sse_client
-        print("[MCP CONFIG] SSE client imported successfully")
-    except ImportError:
-        print("[MCP CONFIG] WARNING: SSE client not available, falling back to httpx")
-        import httpx
+    from mcp.client.sse import sse_client
+    print("[MCP CONFIG] SSE client imported successfully")
 else:
-    # MCP Server configuration - using stdio transport to spear-mcp (local development)
-    print("[MCP CONFIG] Using stdio transport (local development)")
+    # MCP Server configuration - using stdio transport (local development fallback)
+    # Set MCP_SERVER_DIR in .env to override; defaults to ../mcp-server relative to this file
+    _default_mcp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp-server")
+    _mcp_server_dir = os.getenv("MCP_SERVER_DIR", _default_mcp_dir)
+    print(f"[MCP CONFIG] Using stdio transport (local development): {_mcp_server_dir}")
     MCP_SERVER_PARAMS = StdioServerParameters(
         command="uv",
-        args=["--directory", "/home/zappalaj/spear-mcp-test", "run", "spear-mcp"]
+        args=["--directory", _mcp_server_dir, "run", "spear-mcp"]
     )
 
 # Define available tools with their metadata
@@ -37,16 +81,8 @@ AVAILABLE_TOOLS = [
         "description": "Create and display a matplotlib plot",
         "function": plot_climate_data
     },
-    {
-        "name": "browse_spear_directory",
-        "description": "Browse SPEAR directory structure step by step",
-        "mcp_tool": True
-    },
-    {
-        "name": "search_spear_variables",
-        "description": "Search for variables across SPEAR datasets",
-        "mcp_tool": True
-    },
+    # All paths, variables, and file mappings are precomputed in spear_data_paths.py.
+    # The bot should use query_netcdf_data DIRECTLY without browsing or searching.
     {
         "name": "get_s3_file_metadata_only",
         "description": "Get metadata of a SPEAR NetCDF file without loading data",
@@ -55,6 +91,27 @@ AVAILABLE_TOOLS = [
     {
         "name": "query_netcdf_data",
         "description": "Query NetCDF data with spatial/temporal subsetting",
+        "mcp_tool": True
+    },
+    # CMIP6 Zarr tools
+    {
+        "name": "test_cmip6_connection",
+        "description": "Test connection to CMIP6 Zarr store",
+        "mcp_tool": True
+    },
+    {
+        "name": "get_zarr_store_info",
+        "description": "Get metadata about the CMIP6 Zarr store",
+        "mcp_tool": True
+    },
+    {
+        "name": "query_zarr_data",
+        "description": "Query CMIP6 Zarr data with spatial/temporal subsetting",
+        "mcp_tool": True
+    },
+    {
+        "name": "get_zarr_summary_statistics",
+        "description": "Get summary statistics from CMIP6 Zarr data",
         "mcp_tool": True
     }
 ]
@@ -166,7 +223,7 @@ def check_query_size_before_execution(tool_input):
     frequency = tool_input.get("frequency", "Amon")
     variable = tool_input.get("variable", "unknown")
     scenario = tool_input.get("scenario", "scenarioSSP5-85")
-    ensemble = tool_input.get("ensemble_member", "r15i1p1f1")
+    ensemble = tool_input.get("ensemble_member", "r1i1p1f1")
 
     # ========================================================================
     # VALIDATE AND AUTO-CONVERT LAT/LON RANGES
@@ -266,132 +323,144 @@ def check_query_size_before_execution(tool_input):
     return None
 
 
+def preprocess_query_parameters(tool_input):
+    """
+    Preprocess query_netcdf_data parameters to fix common issues:
+    1. Convert negative longitudes (-180 to 180) to 0-360 format
+    2. Ensure lat/lon ranges are in correct order [min, max]
+    3. Set sensible defaults for missing parameters
+    """
+    import copy
+    processed = copy.deepcopy(tool_input)
+
+    # ========================================================================
+    # FIX LONGITUDE FORMAT: Convert -180/180 to 0-360
+    # ========================================================================
+    lon_range = processed.get("lon_range")
+    if lon_range is not None and isinstance(lon_range, list) and len(lon_range) == 2:
+        min_lon, max_lon = lon_range
+        original = [min_lon, max_lon]
+
+        # Convert negative longitudes to 0-360
+        if min_lon < 0:
+            min_lon = min_lon + 360
+        if max_lon < 0:
+            max_lon = max_lon + 360
+
+        # Ensure proper ordering
+        if min_lon > max_lon:
+            min_lon, max_lon = max_lon, min_lon
+
+        processed["lon_range"] = [min_lon, max_lon]
+
+        if original != [min_lon, max_lon]:
+            print(f"[PREPROCESS] Converted lon_range: {original} -> {processed['lon_range']}")
+
+    # ========================================================================
+    # FIX LATITUDE ORDER: Ensure [min, max]
+    # ========================================================================
+    lat_range = processed.get("lat_range")
+    if lat_range is not None and isinstance(lat_range, list) and len(lat_range) == 2:
+        min_lat, max_lat = lat_range
+        if min_lat > max_lat:
+            processed["lat_range"] = [max_lat, min_lat]
+            print(f"[PREPROCESS] Fixed lat_range order: {lat_range} -> {processed['lat_range']}")
+
+    # ========================================================================
+    # SET DEFAULTS for commonly missing parameters
+    # ========================================================================
+    if not processed.get("ensemble_member"):
+        processed["ensemble_member"] = "r1i1p1f1"
+        print(f"[PREPROCESS] Set default ensemble_member: r1i1p1f1")
+
+    if not processed.get("frequency"):
+        processed["frequency"] = "Amon"
+        print(f"[PREPROCESS] Set default frequency: Amon")
+
+    if not processed.get("grid"):
+        processed["grid"] = "gr3"
+
+    if not processed.get("version"):
+        processed["version"] = "v20210201"
+
+    if not processed.get("scenario"):
+        processed["scenario"] = "historical"
+        print(f"[PREPROCESS] Set default scenario: historical")
+
+    return processed
+
+
 async def call_mcp_server_http(tool_name, tool_input):
-    """Call the MCP server using FastMCP HTTP protocol"""
+    """Call the MCP server using SSE transport (proper MCP protocol)"""
     import traceback
-    import httpx
+    import time
 
     try:
-        mcp_url = MCP_SERVER_URL + "/mcp"
-        print(f"[MCP] Connecting to FastMCP: {mcp_url}")
+        # Build the SSE URL (e.g., http://localhost:8000 -> http://localhost:8000/sse)
+        sse_url = MCP_SERVER_URL.rstrip('/') + '/sse'
+        print(f"[MCP] Connecting via SSE to: {sse_url}")
         print(f"[MCP] Tool: {tool_name}, Input: {tool_input}")
 
-        # Increase timeout for S3 data fetching operations
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            # Step 1: Initialize session
-            init_request = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "initialize",
-                "params": {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {},
-                    "clientInfo": {"name": "spear-chatbot", "version": "1.0"}
-                }
-            }
+        # Track timing
+        start_time = time.time()
 
-            response = await client.post(
-                mcp_url,
-                json=init_request,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json, text/event-stream"
-                }
-            )
-            response.raise_for_status()
+        # Use the proper MCP SSE client with very long timeout for large S3 operations (6hr data)
+        async with sse_client(sse_url, timeout=1800) as (read, write):  # 30 minutes
+            async with ClientSession(read, write) as session:
+                # Initialize the session
+                await session.initialize()
+                print(f"[MCP] Session initialized successfully")
 
-            # Extract session ID from headers
-            session_id = response.headers.get("mcp-session-id")
-            if not session_id:
-                raise Exception("No session ID received from server")
+                # Call the tool
+                result = await session.call_tool(tool_name, tool_input)
 
-            print(f"[MCP] Session initialized: {session_id}")
+                # Calculate elapsed time
+                elapsed_time = time.time() - start_time
+                print(f"[MCP] Tool call completed in {elapsed_time:.2f}s")
 
-            # Step 2: Send initialized notification
-            init_notification = {
-                "jsonrpc": "2.0",
-                "method": "notifications/initialized",
-                "params": {}
-            }
-
-            await client.post(
-                mcp_url,
-                json=init_notification,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json, text/event-stream",
-                    "mcp-session-id": session_id
-                }
-            )
-
-            print(f"[MCP] Sent initialized notification")
-
-            # Step 3: Call the tool
-            tool_request = {
-                "jsonrpc": "2.0",
-                "id": 2,
-                "method": "tools/call",
-                "params": {
-                    "name": tool_name,
-                    "arguments": tool_input
-                }
-            }
-
-            response = await client.post(
-                mcp_url,
-                json=tool_request,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json, text/event-stream",
-                    "mcp-session-id": session_id
-                }
-            )
-            response.raise_for_status()
-
-            # Parse SSE response
-            response_text = response.text
-            # SSE format: "event: message\ndata: {...}\n\n"
-            if "data: " in response_text:
-                json_data = response_text.split("data: ")[1].strip()
-                result = json.loads(json_data)
-
-                if "error" in result:
-                    return {
-                        "status": "error",
-                        "error": f"MCP server error: {result['error']}"
-                    }
-
-                # Extract result from MCP response
-                if "result" in result:
-                    mcp_result = result["result"]
-                    # Check if content is wrapped
-                    if isinstance(mcp_result, dict) and "content" in mcp_result:
-                        content_list = mcp_result["content"]
-                        if len(content_list) > 0:
-                            content = content_list[0]
-                            if "text" in content:
-                                data = content["text"]
-                                try:
-                                    data = json.loads(data)
-                                except:
-                                    pass
-                            else:
-                                data = content
-                        else:
-                            data = mcp_result
+                # Extract content from result
+                raw_content = ""
+                if result.content:
+                    content = result.content[0]
+                    if hasattr(content, 'text'):
+                        raw_content = content.text
+                        data = raw_content
+                        # Try to parse as JSON if possible
+                        try:
+                            data = json.loads(data)
+                        except json.JSONDecodeError:
+                            pass
                     else:
-                        data = mcp_result
+                        data = str(content)
+                        raw_content = data
+                else:
+                    data = "No content returned"
+                    raw_content = ""
 
-                    return {
-                        "status": "ok",
-                        "tool": tool_name,
-                        "data": data
+                # Calculate response size
+                response_bytes = len(raw_content.encode('utf-8')) if raw_content else 0
+
+                # Calculate data points if this is query_netcdf_data
+                data_points = 0
+                if tool_name == "query_netcdf_data" and isinstance(data, dict):
+                    data_info = data.get("data_info", {})
+                    shape = data_info.get("shape", [])
+                    if shape:
+                        data_points = 1
+                        for dim in shape:
+                            data_points *= dim
+
+                return {
+                    "status": "ok",
+                    "tool": tool_name,
+                    "data": data,
+                    "transfer_stats": {
+                        "elapsed_time_seconds": round(elapsed_time, 2),
+                        "response_bytes": response_bytes,
+                        "response_kb": round(response_bytes / 1024, 2),
+                        "data_points": data_points,
                     }
-
-            return {
-                "status": "error",
-                "error": f"Unexpected response format: {response_text}"
-            }
+                }
 
     except Exception as e:
         import sys
@@ -407,7 +476,12 @@ async def call_mcp_server_http(tool_name, tool_input):
 
 async def call_mcp_server_stdio(tool_name, tool_input):
     """Call the MCP server using stdio transport"""
+    import time
+
     try:
+        # Track timing
+        start_time = time.time()
+
         async with stdio_client(MCP_SERVER_PARAMS) as (read, write):
             async with ClientSession(read, write) as session:
                 # Initialize the session
@@ -416,12 +490,17 @@ async def call_mcp_server_stdio(tool_name, tool_input):
                 # Call the tool
                 result = await session.call_tool(tool_name, tool_input)
 
+                # Calculate elapsed time
+                elapsed_time = time.time() - start_time
+
                 # Extract content from result
+                raw_content = ""
                 if result.content:
                     # Handle different content types
                     content = result.content[0]
                     if hasattr(content, 'text'):
-                        data = content.text
+                        raw_content = content.text
+                        data = raw_content
                         # Try to parse as JSON if possible
                         try:
                             data = json.loads(data)
@@ -429,13 +508,34 @@ async def call_mcp_server_stdio(tool_name, tool_input):
                             pass
                     else:
                         data = str(content)
+                        raw_content = data
                 else:
                     data = "No content returned"
+                    raw_content = ""
+
+                # Calculate response size
+                response_bytes = len(raw_content.encode('utf-8')) if raw_content else 0
+
+                # Calculate data points if this is query_netcdf_data
+                data_points = 0
+                if tool_name == "query_netcdf_data" and isinstance(data, dict):
+                    data_info = data.get("data_info", {})
+                    shape = data_info.get("shape", [])
+                    if shape:
+                        data_points = 1
+                        for dim in shape:
+                            data_points *= dim
 
                 return {
                     "status": "ok",
                     "tool": tool_name,
-                    "data": data
+                    "data": data,
+                    "transfer_stats": {
+                        "elapsed_time_seconds": round(elapsed_time, 2),
+                        "response_bytes": response_bytes,
+                        "response_kb": round(response_bytes / 1024, 2),
+                        "data_points": data_points,
+                    }
                 }
 
     except Exception as e:
@@ -448,9 +548,11 @@ async def call_mcp_server_stdio(tool_name, tool_input):
 async def call_mcp_server(tool_name, tool_input):
     """Call the MCP server using configured transport (HTTP or stdio)"""
     if USE_HTTP_TRANSPORT:
-        return await call_mcp_server_http(tool_name, tool_input)
+        result = await call_mcp_server_http(tool_name, tool_input)
     else:
-        return await call_mcp_server_stdio(tool_name, tool_input)
+        result = await call_mcp_server_stdio(tool_name, tool_input)
+
+    return result
 
 
 async def query_mcp_tool_async(tool_name, tool_input):
@@ -473,8 +575,28 @@ async def query_mcp_tool_async(tool_name, tool_input):
 
         # Check if this is an MCP tool
         if tool_config.get("mcp_tool", False):
+            # Preprocess query_netcdf_data to fix common issues
+            if tool_name == "query_netcdf_data":
+                tool_input = preprocess_query_parameters(tool_input)
+
+                # Check cache FIRST before making MCP call
+                cached = get_cached_result(tool_name, tool_input)
+                if cached:
+                    # Add note that this is cached data
+                    cached_copy = cached.copy()
+                    if isinstance(cached_copy.get("data"), dict):
+                        cached_copy["data"]["_cached"] = True
+                        cached_copy["data"]["_cache_note"] = "This data was retrieved from cache. Use create_plot to visualize it."
+                    return cached_copy
+
             # Call MCP server
-            return await call_mcp_server(tool_name, tool_input)
+            result = await call_mcp_server(tool_name, tool_input)
+
+            # Cache successful query_netcdf_data results
+            if tool_name == "query_netcdf_data" and result.get("status") == "ok":
+                cache_result(tool_name, tool_input, result)
+
+            return result
 
         # For local tools, get the function
         tool_func = tool_config.get("function")

@@ -17,7 +17,7 @@ category ratings and an overall confidence score:
 **What it measures:** How confident the chatbot is that the data values are correct and from
 actual SPEAR files rather than general knowledge or fabricated.
 
-**High confidence (95-100%) when:**
+**High confidence (95-99%) when:**
 - Data retrieved directly from MCP tools (query_netcdf_data, browse_spear_directory, etc.)
 - Tool execution was successful with no errors
 - Complete metadata is available (coordinates, time period, scenario, ensemble member)
@@ -33,14 +33,14 @@ actual SPEAR files rather than general knowledge or fabricated.
 
 **Example:** If you ask "What was the temperature in New York in January 2020?" and the
 chatbot successfully queries SPEAR with the query_netcdf_data tool and returns data with
-full metadata → Data Accuracy = 100%. But if the tool fails and the chatbot provides a
+full metadata → Data Accuracy = 99%. But if the tool fails and the chatbot provides a
 general answer → Data Accuracy = 30%.
 
 ### 2. Scientific Explanation (0-100%)
 **What it measures:** How confident the chatbot is in the scientific accuracy and validity
 of its explanations about climate processes, phenomena, and interpretations.
 
-**High confidence (95-100%) when:**
+**High confidence (95-99%) when:**
 - Explanation based on well-established, fundamental physics (e.g., thermodynamics)
 - Supported by definitions in the knowledge base (variable_definitions.py, spear_model_info.py)
 - Clear physical mechanisms with strong evidence base
@@ -60,7 +60,7 @@ specific cloud microphysics in a particular storm → 50% (complex, uncertain pr
 **What it measures:** How confident the chatbot is in details about SPEAR models, their
 capabilities, configurations, and technical specifications.
 
-**High confidence (95-100%) when:**
+**High confidence (95-99%) when:**
 - Information comes directly from spear_model_info.py configuration file
 - Standard, well-documented SPEAR features and configurations
 - Official model specifications (resolution, components, scenarios)
@@ -80,7 +80,7 @@ Discussing unpublished SPEAR experiments → 30% (not documented).
 **What it measures:** How confident the chatbot is in variable names, units, descriptions,
 and interpretations.
 
-**High confidence (95-100%) when:**
+**High confidence (95-99%) when:**
 - Variable is fully defined in variable_definitions.py
 - CF (Climate and Forecast) standard name is documented
 - Units, typical ranges, and use cases are specified
@@ -120,7 +120,7 @@ The **overall confidence** is calculated as a weighted average of the four categ
 
 | Level | Range | Emoji | Meaning | User Action |
 |-------|-------|-------|---------|-------------|
-| **Very High** | 95-100% | 🟢 | Information directly from tools/knowledge base, well-established science | Can be used with high trust |
+| **Very High** | 95-99% | 🟢 | Information directly from tools/knowledge base, well-established science | Can be used with high trust |
 | **High** | 80-94% | 🟢 | Strong evidence, minor uncertainties or assumptions | Generally reliable, minor verification recommended |
 | **Moderate** | 60-79% | 🟡 | Some uncertainties, reasonable assumptions made | Cross-check with other sources |
 | **Low** | 40-59% | 🟠 | Significant uncertainties, important assumptions | Should verify independently |
@@ -172,7 +172,7 @@ After a response about temperature data from SPEAR:
 📊 **Overall Confidence: 95%** 🟢
 
 **Breakdown:**
-- 🔍 **Data Accuracy:** 100% - Data from query_netcdf_data with complete metadata
+- 🔍 **Data Accuracy:** 99% - Data from query_netcdf_data with complete metadata
 - 🧪 **Scientific Explanation:** 95% - Temperature trends are well-established
 - 🖥️ **Model Information:** 95% - SPEAR scenario info from knowledge base
 - 📋 **Variable Definitions:** 90% - 'tas' fully defined in variable_definitions.py
@@ -264,7 +264,7 @@ CONFIDENCE_CATEGORIES = {
 
 CONFIDENCE_LEVELS = {
     "very_high": {
-        "range": "95-100%",
+        "range": "95-99%",
         "label": "Very High",
         "emoji": "🟢",
         "description": "Information directly from tools/knowledge base, well-established science"
@@ -325,28 +325,28 @@ After every response, you MUST provide a confidence assessment in the following 
 ### Guidelines for Each Category:
 
 **Data Accuracy (0-100%):**
-- 95-100%: Data directly from successful tool execution, all metadata present
+- 95-99%: Data directly from successful tool execution, all metadata present
 - 80-94%: Data from tools but minor gaps (e.g., partial metadata)
 - 60-79%: Some data from tools, some from knowledge base/memory
 - 40-59%: Mostly from memory/knowledge base, minimal tool verification
 - 0-39%: No tool verification, general knowledge only or tool errors
 
 **Scientific Explanation (0-100%):**
-- 95-100%: Well-established physics, matches knowledge base
+- 95-99%: Well-established physics, matches knowledge base
 - 80-94%: Strong scientific basis, minor simplifications
 - 60-79%: Generally accepted, some assumptions or simplifications
 - 40-59%: Basic principles, significant uncertainties
 - 0-39%: Outside core expertise, highly uncertain
 
 **Model Information (0-100%):**
-- 95-100%: Directly from knowledge base configuration files
+- 95-99%: Directly from knowledge base configuration files
 - 80-94%: From knowledge base with minor inference
 - 60-79%: Partial knowledge base info, some general CMIP6 knowledge
 - 40-59%: General climate model knowledge, not SPEAR-specific
 - 0-39%: Speculative or uncertain
 
 **Variable Definitions (0-100%):**
-- 95-100%: Variable fully defined in knowledge base
+- 95-99%: Variable fully defined in knowledge base
 - 80-94%: Variable in knowledge base, minor details inferred
 - 60-79%: Similar variable in knowledge base, extrapolated
 - 40-59%: General climate knowledge, not in knowledge base
@@ -377,7 +377,7 @@ Calculate overall confidence as weighted average:
 📊 **Overall Confidence: 95%** 🟢
 
 **Breakdown:**
-- 🔍 **Data Accuracy:** 100% - Data retrieved directly from query_netcdf_data tool with complete metadata
+- 🔍 **Data Accuracy:** 99% - Data retrieved directly from query_netcdf_data tool with complete metadata
 - 🧪 **Scientific Explanation:** 95% - Temperature trends are well-established climate science
 - 🖥️ **Model Information:** 95% - SPEAR scenario information from knowledge base
 - 📋 **Variable Definitions:** 90% - 'tas' fully defined in variable_definitions.py
@@ -436,7 +436,7 @@ Calculate overall confidence as weighted average:
 3. **Be specific** - Explain what increases/decreases confidence
 4. **Use the format** - Follow the template above exactly
 5. **Round to 5%** - Use multiples of 5 for all percentages
-6. **Match emoji to level** - 🟢 (80-100%), 🟡 (60-79%), 🟠 (40-59%), 🔴 (0-39%)
+6. **Match emoji to level** - 🟢 (80-99%), 🟡 (60-79%), 🟠 (40-59%), 🔴 (0-39%)
 7. **Adjust for context** - If user asks a question you can't answer with tools, be explicit about lower confidence
 8. **Tool failures = lower confidence** - If tools fail, overall confidence should reflect that
 

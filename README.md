@@ -10,7 +10,7 @@ https://github.com/zappalaja/spear-mcp-test
 
 - **Direct SPEAR Data Access**: Query climate data from AWS S3 (historical and SSP5-8.5 scenarios)
 - **Visualization**: Generate plots
-- **Claude AI Integration**: Powered by Anthropic's Claude Sonnet 4.5
+- **Ollama AI Integration**: Powered by local Ollama models (default: Gemma 3)
 - **Smart Size Management**: Automatic query validation and size checking
 - **Geographic Conversion**: Auto-converts longitude formats (-180/180 ↔ 0-360)
 - **Expert Knowledge Base**: Built-in climate science terminology and SPEAR model info
@@ -39,11 +39,15 @@ Python Virtual Environment
    pip install -r requirements.txt
    ```
 
-3. **Configure API key**
+3. **Configure Ollama**
    ```bash
    cp .env.template .env
-   # Edit .env and add your Anthropic API key:
-   # ANTHROPIC_API_KEY=your_api_key_here
+   # Edit .env if Ollama is not running locally:
+   # OLLAMA_BASE_URL=http://localhost:11434
+   ```
+   Ensure Ollama is running and the model is available:
+   ```bash
+   ollama pull gemma3
    ```
 
 4. **Run the application**
@@ -68,10 +72,10 @@ Python Virtual Environment
 Create a `.env` file with:
 
 ```bash
-ANTHROPIC_API_KEY=your_api_key_here
+OLLAMA_BASE_URL=http://localhost:11434
 ```
 
-Get your API key from: https://console.anthropic.com/
+If you run Ollama on another host, update the URL accordingly (omit any trailing `/api`, `/api/chat`, or `/v1/chat/completions`). If you want to use the OpenAI-compatible endpoint, set `OLLAMA_BASE_URL` to `http://localhost:11434/v1`.
 
 ### Customization
 
@@ -127,7 +131,7 @@ The chatbot automatically prevents queries that would exceed API token limits:
 - Python 3.11+
 - 2GB RAM
 - Internet connection (for S3 access)
-- Anthropic API key
+- Ollama running locally (or reachable over the network)
 
 ## Troubleshooting
 
@@ -138,11 +142,11 @@ Make sure you've installed all dependencies:
 pip install -r requirements.txt
 ```
 
-### "Invalid API key"
+### "Ollama connection failed"
 
-Check your `.env` file has the correct API key:
+Check your `.env` file has the correct URL:
 ```bash
-ANTHROPIC_API_KEY=your_api_key_here
+OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ### "Query too large" errors
@@ -158,4 +162,3 @@ Ensure port 8501 is available:
 ```bash
 lsof -i :8501
 ```
-

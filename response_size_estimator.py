@@ -6,7 +6,7 @@ This module provides utilities to estimate the size of responses before executin
 tools, preventing token limit errors and providing helpful alternatives.
 
 Token Limits:
-- Claude API: 200,000 tokens maximum per request
+- Local Ollama model: 200,000 tokens maximum per request (configured assumption)
 - Safe threshold: ~180,000 tokens (90% of limit)
 - Reserve for response: ~20,000 tokens
 
@@ -325,60 +325,6 @@ This query would generate approximately **{estimated_tokens:,} tokens**, which e
     message += "- For very large analyses, use Python scripts to access data directly\n"
 
     return message
-
-
-# ============================================================================
-# CONVENIENCE FUNCTIONS
-# ============================================================================
-
-def estimate_and_check(
-    time_range: str,
-    lat_range: Tuple[float, float],
-    lon_range: Tuple[float, float],
-    frequency: str = "monthly",
-    current_tokens: int = 15000  # Typical conversation size
-) -> Tuple[bool, Optional[str]]:
-    """
-    Estimate query size and return warning if too large.
-
-    Args:
-        time_range: e.g., "2020-2100"
-        lat_range: (min_lat, max_lat)
-        lon_range: (min_lon, max_lon)
-        frequency: "monthly" or "daily"
-        current_tokens: Current conversation token count
-
-    Returns:
-        Tuple of (is_ok, warning_message)
-    """
-    # Parse time range
-    start_year, end_year = map(int, time_range.split('-'))
-    years = end_year - start_year + 1
-
-    # Estimate time points
-    if frequency == "monthly":
-        time_points = years * 12
-    else:  # daily
-        time_points = years * 365
-
-    # Estimate spatial points (assuming 1° resolution)
-    lat_points = int(abs(lat_range[1] - lat_range[0]))
-    lon_points = int(abs(lon_range[1] - lon_range[0]))
-
-    # Check if too large
-    is_too_large, estimated_tokens, _ = is_query_too_large(
-        time_points, lat_points, lon_points, current_tokens
-    )
-
-    if is_too_large:
-        suggestions = suggest_alternatives(
-            time_points, lat_points, lon_points,
-            "variable", "scenario", "ensemble"
-        )
-        warning = format_size_warning(estimated_tokens, suggestions)
-        return False, warning
-    else:
-        return True, None
 
 
 # ============================================================================
